@@ -34,7 +34,7 @@ class MemberUser(Base):
     update_date = Column(DateTime, nullable=True)  # 회원정보 수정 일자 및 시간, null 허용
     user_isDisabled = Column(Boolean, default=False)  # 계정 비활성화 여부, 기본값은 False 
     user_registrationDate = Column(DateTime, nullable=False)  # 가입일자
-    
+    verification_code = Column(String(6), nullable=True)  # 인증 코드
 
      # 관계 설정
     profile = relationship("MemberProfile", uselist=False, back_populates="user")

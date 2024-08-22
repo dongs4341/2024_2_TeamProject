@@ -24,10 +24,37 @@ def create_user_route(user: schema.UserCreate, db: Session = Depends(get_db)):
         db_user_phone = crud.get_user_by_phone(db, cell_phone=user.cell_phone)
         if db_user_email or db_user_phone:
             raise HTTPException(status_code=400, detail="User already registered")
-        return crud.create_user(db=db, user=user)
+        
+        # 6자리 인증 코드 생성
+        verification_code = auth.generate_verification_code()
+        
+        # 사용자 생성 (아직 계정 비활성화)
+        user_data = crud.create_user(db=db, user=user, verification_code=verification_code)
+        
+        # 이메일로 인증 코드 전송
+        auth.send_verification_email(user.email, verification_code)
+
+        return user_data
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/verify-code", summary="코드 인증")
+def verify_code_route(email: str, code: str, db: Session = Depends(get_db)):
+    user = crud.get_user_by_email(db, email=email)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if user.verification_code != code:
+        raise HTTPException(status_code=400, detail="Invalid verification code")
+    
+    # 계정 활성화
+    user.user_isDisabled = False
+    user.verification_code = None  # 인증 코드 제거
+    db.commit()
+    
+    return {"msg": "Account successfully verified"}
+
 
 # 로그인
 @router.post("/login", summary="로그인")
@@ -35,6 +62,11 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     user = crud.authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(status_code=401, detail="Incorrect user ID or password")
+    
+    if user.user_isDisabled:
+        # 계정이 비활성화된 경우 이메일 인증 먼저 하라고 알려줌
+        raise HTTPException(status_code=403, detail="Email not verified")
+    
     access_token = auth.create_access_token(user.email)
     refresh_token = auth.create_refresh_token(user.email)
     return {"access_token": access_token, "refresh_token": refresh_token, "user_email": user.email}

@@ -25,7 +25,7 @@ class UserCreate(BaseModel):
 class UserInDB(UserCreate):
     password: str  # DB에 저장된 해시된 비밀번호
     user_registrationDate: datetime = datetime.utcnow()  # 사용자 등록 날짜
-    user_isDisabled: bool = False  # 계정 비활성화 여부
+    user_isDisabled: bool = True  # 계정 비활성화 여부
 
     class Config:
         from_attributes = True

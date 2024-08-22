@@ -17,7 +17,7 @@ def get_user_by_phone(db: Session, cell_phone: str):
     )
 
 # 회원가입
-def create_user(db: Session, user: UserCreate):
+def create_user(db: Session, user: UserCreate, verification_code: str):
     hashed_password = member_user.get_password_hash(user.password)  # 비밀번호 해싱
     db_user = member_user(
         email=user.email,
@@ -27,6 +27,8 @@ def create_user(db: Session, user: UserCreate):
         birthday=user.birthday,
         gender=user.gender,
         user_registrationDate=member_user.get_kst_now(),
+        user_isDisabled=True,
+        verification_code=verification_code  # 인증 코드 저장
     )
     db.add(db_user)
     db.commit()

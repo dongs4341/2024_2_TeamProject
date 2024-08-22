@@ -7,6 +7,9 @@ from fastapi import HTTPException, Depends
 from sqlalchemy.orm import Session
 import app.crud as crud
 from app.database import SessionLocal
+import smtplib
+from email.mime.text import MIMEText
+import random
 
 # 토큰 발급 URL을 지정 //클라이언트에서 인증 요청을 보낼 때 사용할 URL을 설정함
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -66,3 +69,20 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer_
     if user is None:
         raise credentials_exception
     return user
+
+# 6자리 랜덤 숫자 코드 생성 함수
+def generate_verification_code():
+    return str(random.randint(100000, 999999))
+
+# 이메일 전송 함수
+def send_verification_email(email: str, code: str):
+    msg = MIMEText(f"회원가입을 완료하려면 다음 6자리 코드를 입력하세요: {code}")
+    msg['Subject'] = '이메일 인증 코드'
+    msg['From'] = 'noreply@yourdomain.com'
+    msg['To'] = email
+    
+    # SMTP 서버 주소: gmail
+    with smtplib.SMTP('smtp.gmail.com', 587) as server:
+        server.starttls()
+        server.login("2024jjtest@gmail.com", "opqz xdkd ttdu giss")
+        server.send_message(msg)
