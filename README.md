@@ -58,3 +58,11 @@ Commit 메세지
 입력본문은 한 줄 최대 72자 입력<br>
 본문을 사용하여 변경 한 내용과 이유 설명(어떻게 보다는 무엇과 왜를 설명)<br>
 한글로 작성<br>
+
+
+### 필요한 패키지 설치
+pip install -r requirements.txt #패키지 설치
+
+### FastAPI 실행
+uvicorn app.main:app --reload
+
