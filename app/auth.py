@@ -7,8 +7,8 @@ from fastapi import HTTPException, Depends
 from sqlalchemy.orm import Session
 import app.crud as crud
 from app.database import SessionLocal
-import smtplib
-from email.mime.text import MIMEText
+import smtplib       # SMTP 사용을 위한 모듈
+from email.mime.text import MIMEText    # 메일의 본문 내용을 만드는 모듈
 import random
 
 # 토큰 발급 URL을 지정 //클라이언트에서 인증 요청을 보낼 때 사용할 URL을 설정함
@@ -76,13 +76,14 @@ def generate_verification_code():
 
 # 이메일 전송 함수
 def send_verification_email(email: str, code: str):
+    # 메일 기본 정보 설정
     msg = MIMEText(f"회원가입을 완료하려면 다음 6자리 코드를 입력하세요: {code}")
     msg['Subject'] = '이메일 인증 코드'
-    msg['From'] = 'noreply@yourdomain.com'
+    msg['From'] = '2024jjtest@gmail.com'
     msg['To'] = email
     
     # SMTP 서버 주소: gmail
-    with smtplib.SMTP('smtp.gmail.com', 587) as server:
-        server.starttls()
-        server.login("2024jjtest@gmail.com", "opqz xdkd ttdu giss")
+    with smtplib.SMTP('smtp.gmail.com', 587) as server: # SMTP 서버에 연결을 설정(Gmail의 SMTP 서버('smtp.gmail.com')를 포트 587을 통해 사용)
+        server.starttls()   # TLS(전송 계층 보안) 사용 -> 이메일 데이터를 암호화하여 전송
+        server.login("2024jjtest@gmail.com", "opqz xdkd ttdu giss") # 실제: 환경 변수 사용으로 변경
         server.send_message(msg)
