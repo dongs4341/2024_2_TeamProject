@@ -55,15 +55,15 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(bearer_
     try:
         # JWT 토큰 디코딩 및 사용자 ID 추출
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id = payload.get("sub")
-        if user_id is None:
+        user_email = payload.get("sub")
+        if user_email is None:
             raise credentials_exception
     except JWTError:
         raise credentials_exception
 
     # 데이터베이스에서 사용자 정보 가져오기
     db: Session = SessionLocal()
-    user = crud.get_user_by_id(db, id=user_id)
+    user = crud.get_user_by_email(db, email=user_email)
     db.close()
 
     if user is None:

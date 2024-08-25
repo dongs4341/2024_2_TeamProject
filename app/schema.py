@@ -34,3 +34,12 @@ class UserInDB(UserCreate):
 # UserCreate의 확장으로 추가 데이터 없이 모든 속성 상속
 class User(UserInDB):
     pass
+
+class ProfileCreate(BaseModel):
+    nickname: Optional[str] = None
+    image_url: Optional[str] = None
+
+
+class ProfileUpdate(BaseModel):
+    nickname: Optional[str] = None
+    image_url: Optional[str] = None

@@ -64,9 +64,9 @@ class MemberProfile(Base):
     user_no = Column(Integer, ForeignKey('member_user.user_no'))
     nickname = Column(String(12))
     image_url = Column(String(100))
-    join_date = Column(DateTime)
+    # join_date = Column(DateTime)  //이건 뭐지?
     update_date = Column(DateTime)
-    create_date = Column(DateTime)
+    create_date = Column(DateTime) # 없어도 되나?
 
     user = relationship("MemberUser", back_populates="profile")
 

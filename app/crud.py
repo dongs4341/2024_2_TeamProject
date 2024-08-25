@@ -1,9 +1,16 @@
 from sqlalchemy.orm import Session, joinedload
 from app.model import MemberUser as member_user
+from app.model import MemberProfile as member_profile 
 from app.schema import (
     UserCreate,
+    ProfileUpdate,
+    ProfileCreate
 )
 from fastapi import HTTPException
+
+def get_user_by_no(db: Session, user_no: int):
+    return db.query(member_user).filter(member_user.user_no == user_no).first()
+
 
 def get_user_by_email(db: Session, email: str):
     return db.query(member_user).filter(member_user.email == email).first()
@@ -43,3 +50,43 @@ def authenticate_user(db: Session, user_email: str, password: str):
     if db_user and db_user.verify_password(password):
         return db_user
     return None
+
+def create_user_profile(db: Session, user_no: int, profile_data: ProfileCreate):
+    user = get_user_by_no(db, user_no=user_no)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    profile = member_profile (
+        user_no=user_no,
+        nickname=profile_data.nickname,
+        image_url=profile_data.image_url,
+        create_date=member_user.get_kst_now()
+    )
+    
+    db.add(profile)
+    db.commit()
+    db.refresh(profile)
+    
+    return profile
+
+
+# 프로필 수정
+def profile_update(db:Session, user_no: int, profile_data:ProfileUpdate):
+    user = get_user_by_no(db, user_no=user_no)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    profile = user.profile
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    
+    if profile_data.nickname is not None:
+        profile.nickname = profile_data.nickname
+    if profile_data.image_url is not None:
+        profile.image_url = profile_data.image_url
+    
+    profile.update_date = member_user.get_kst_now()  # 사용자 정보 수정 시각 업데이트
+    db.commit()
+    db.refresh(profile)
+    
+    return profile

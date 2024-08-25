@@ -70,3 +70,26 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     access_token = auth.create_access_token(user.email)
     refresh_token = auth.create_refresh_token(user.email)
     return {"access_token": access_token, "refresh_token": refresh_token, "user_email": user.email}
+
+# 프로필 등록
+@router.post("/profile-create/{user_no}", response_model=schema.ProfileCreate, summary="프로필 등록")
+def create_profile_route(user_no: int, profile_data: schema.ProfileCreate, db: Session = Depends(get_db), current_user: schema.User = Depends(auth.get_current_user)):
+    # 현재 로그인한 사용자만 자신의 프로필을 등록할 수 있도록 제한
+    if user_no != current_user.user_no:
+        raise HTTPException(status_code=403, detail="You do not have permission to create this profile.")
+    
+    profile = crud.create_user_profile(db=db, user_no=user_no, profile_data=profile_data)
+    return profile
+
+# 프로필 수정
+@router.put("/profile-update/{user_no}", response_model=schema.ProfileUpdate, summary="프로필 수정")
+def profile_update_route(user_no: int, profile_data: schema.ProfileUpdate, db: Session = Depends(get_db), current_user: schema.User = Depends(auth.get_current_user)):
+    # 현재 로그인한 사용자만 자신의 프로필을 수정할 수 있도록 제한
+    if user_no != current_user.user_no:
+        raise HTTPException(status_code=403, detail="You do not have permission to update this profile.")
+    
+    profile_update = crud.profile_update(db=db, user_no=user_no, profile_data=profile_data)
+    if profile_update is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return profile_update
