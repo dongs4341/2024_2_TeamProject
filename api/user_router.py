@@ -93,3 +93,16 @@ def profile_update_route(user_no: int, profile_data: schema.ProfileUpdate, db: S
         raise HTTPException(status_code=404, detail="User not found")
     
     return profile_update
+
+# 비밀번호 변경
+@router.put("/change-password", summary="비밀번호 변경")
+def change_password_route(password_data: schema.ChangePassword, db: Session = Depends(get_db), current_user: schema.User = Depends(auth.get_current_user)):
+    # 세션에 현재 사용자를 병합하여 세션 내에서 지속되도록 보장
+    current_user = db.merge(current_user)
+    # 비밀번호 업데이트
+    crud.update_user_password(
+        db=db,
+        user=current_user,
+        password=password_data.password
+    )
+    return {"msg": "Password successfully changed"}

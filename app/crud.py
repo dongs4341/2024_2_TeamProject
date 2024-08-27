@@ -90,3 +90,10 @@ def profile_update(db:Session, user_no: int, profile_data:ProfileUpdate):
     db.refresh(profile)
     
     return profile
+
+# 비밀번호 변경
+def update_user_password(db: Session, user: member_user, password: str):
+    hashed_password = member_user.get_password_hash(password)
+    user.password = hashed_password
+    db.commit()
+    return user

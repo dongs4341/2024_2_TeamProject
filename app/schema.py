@@ -43,3 +43,6 @@ class ProfileCreate(BaseModel):
 class ProfileUpdate(BaseModel):
     nickname: Optional[str] = None
     image_url: Optional[str] = None
+
+class ChangePassword(BaseModel):
+    password: constr(max_length=128)
