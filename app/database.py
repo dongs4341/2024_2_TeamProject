@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker  # 데이터베이스 세션 생성을 �
 
 
 # 데이터베이스 연결 URL 설정
-SQLALCHEMY_DATABASE_URL = "postgresql://postgres:1872@localhost/test"
+SQLALCHEMY_DATABASE_URL = "postgresql://postgres:1872@192.168.79.24:5432/DB"
 
 # 데이터베이스 엔진 생성
 # SQLAlchemy 엔진은 데이터베이스와의 모든 통신을 처리
