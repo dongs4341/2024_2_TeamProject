@@ -31,7 +31,6 @@ class MemberUser(Base):
     birthday = Column(DateTime, nullable=False)
     gender = Column(Enum("남성", "여성", "기타" ,name="gender_type"), nullable=False)
 
-    update_date = Column(DateTime, nullable=True)  # 회원정보 수정 일자 및 시간, null 허용
     user_isDisabled = Column(Boolean, default=False)  # 계정 비활성화 여부, 기본값은 False 
     user_registrationDate = Column(DateTime, nullable=False)  # 가입일자
     verification_code = Column(String(6), nullable=True)  # 인증 코드
@@ -64,9 +63,8 @@ class MemberProfile(Base):
     user_no = Column(Integer, ForeignKey('member_user.user_no'))
     nickname = Column(String(12))
     image_url = Column(String(100))
-    # join_date = Column(DateTime)  //이건 뭐지?
     update_date = Column(DateTime)
-    create_date = Column(DateTime) # 없어도 되나?
+    create_date = Column(DateTime)
 
     user = relationship("MemberUser", back_populates="profile")
 
