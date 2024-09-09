@@ -18,6 +18,7 @@ pydantic==2.7.1
 pydantic_core==2.18.2
 python-jose==3.3.0
 python-multipart==0.0.9
+python-dotenv==1.0.0
 pytz==2024.1
 rsa==4.9
 six==1.16.0
@@ -26,3 +27,4 @@ SQLAlchemy==2.0.29
 starlette==0.37.2
 typing_extensions==4.11.0
 uvicorn==0.29.0
+#python==3.9.19
