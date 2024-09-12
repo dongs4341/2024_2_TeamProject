@@ -13,7 +13,7 @@ app = FastAPI()
 
 # CORS 설정
 origins = [
-    "http://localhost",  # React 애플리케이션 도메인
+    "http://localhost:3000",  # React 애플리케이션 도메인
     # 필요하다면 다른 도메인을 추가할 수 있습니다.
 ]
 
