@@ -3,10 +3,15 @@ from sqlalchemy.ext.declarative import (
     declarative_base,
 )  # 모델 클래스를 선언하는 기본 클래스 생성
 from sqlalchemy.orm import sessionmaker  # 데이터베이스 세션 생성을 위한 세션메이커
+from dotenv import load_dotenv
+import os
 
+# .env 파일의 환경 변수를 불러옴
+load_dotenv()
 
-# 데이터베이스 연결 URL 설정
+# .env 파일에서 데이터베이스 URL 환경 변수 가져오기
 SQLALCHEMY_DATABASE_URL = "postgresql://root:1872@svc.sel5.cloudtype.app:32187/root"
+
 
 # 데이터베이스 엔진 생성
 # SQLAlchemy 엔진은 데이터베이스와의 모든 통신을 처리
