@@ -55,4 +55,4 @@ class StorageAreaSchema(BaseModel):
     storage_owner: bool
 
     class Config: 
-        orm_mode = True # ORM과 호환되도록 설정
+        from_attributes = True # ORM과 호환되도록 설정
