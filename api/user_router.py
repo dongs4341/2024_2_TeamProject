@@ -39,18 +39,19 @@ def create_user_route(user: schema.UserCreate, db: Session = Depends(get_db)):
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
 
-@router.post("/verify-code", summary="코드 인증")
-def verify_code_route(email: str, code: str, db: Session = Depends(get_db)):
-    user = crud.get_user_by_email(db, email=email)
+# 이메일 인증
+@router.post("/verify-code", summary="이메일 인증")
+def verify_code_route(request: schema.VerifyCodeRequest, db: Session = Depends(get_db)):
+    user = crud.get_user_by_email(db, email=request.email)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    if user.verification_code != code:
+    if user.verification_code != request.verification_code:
         raise HTTPException(status_code=400, detail="Invalid verification code")
     
     # 계정 활성화
     user.user_isDisabled = False
-    user.verification_code = None  # 인증 코드 제거
+    #user.verification_code = None  # 인증 코드 제거
     db.commit()
     
     return {"msg": "Account successfully verified"}
