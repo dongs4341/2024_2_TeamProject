@@ -51,7 +51,7 @@ def verify_code_route(request: schema.VerifyCodeRequest, db: Session = Depends(g
     
     # 계정 활성화
     user.user_isDisabled = False
-    #user.verification_code = None  # 인증 코드 제거
+    user.verification_code = None  # 인증 코드 제거
     db.commit()
     
     return {"msg": "Account successfully verified"}
@@ -74,13 +74,24 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
 
 # 프로필 등록
 @router.post("/profile-create/{user_no}", response_model=schema.ProfileCreate, summary="프로필 등록")
-def create_profile_route(user_no: int, profile_data: schema.ProfileCreate, db: Session = Depends(get_db), current_user: schema.User = Depends(auth.get_current_user)):
+def profile_create_route(user_no: int, profile_data: schema.ProfileCreate, db: Session = Depends(get_db), current_user: schema.User = Depends(auth.get_current_user)):
     # 현재 로그인한 사용자만 자신의 프로필을 등록할 수 있도록 제한
     if user_no != current_user.user_no:
         raise HTTPException(status_code=403, detail="You do not have permission to create this profile.")
     
     profile = crud.create_user_profile(db=db, user_no=user_no, profile_data=profile_data)
     return profile
+
+# 프로필 조회
+@router.get("/profile/{user_no}", response_model=schema.UserInfo, summary="프로필 조회")
+def profile_read_route(db: Session = Depends(get_db), current_user: schema.User = Depends(auth.get_current_user)):
+    
+    user_info = crud.get_user_info(db=db, user_no=current_user.user_no)
+    
+    if not user_info:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    return user_info
 
 # 프로필 수정
 @router.put("/profile-update/{user_no}", response_model=schema.ProfileUpdate, summary="프로필 수정")
@@ -107,20 +118,3 @@ def change_password_route(password_data: schema.ChangePassword, db: Session = De
         password=password_data.password
     )
     return {"msg": "Password successfully changed"}
-
-# 사용자 공간 조회
-@router.get("/users/{user_no}/spaces/{area_no}", response_model=schema.StorageAreaSchema, summary="특정 저장 공간 조회")
-def read_user_storage_space(
-    user_no: int, 
-    area_no: int, 
-    db: Session = Depends(get_db), 
-    current_user: schema.User = Depends(auth.get_current_user)
-):
-    # 현재 로그인한 사용자만 자신의 저장 공간에 접근할 수 있도록 제한
-    if user_no != current_user.user_no:
-        raise HTTPException(status_code=403, detail="You do not have permission to access this storage space.")
-    
-    # 특정 유저가 해당 저장 공간을 소유하는지 확인
-    space = crud.get_user_storage_space(db, user_no=user_no, area_no=area_no)
-    
-    return space
