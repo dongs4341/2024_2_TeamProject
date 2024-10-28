@@ -3,6 +3,7 @@ from sqlalchemy import (
     Integer,
     String,
     Boolean,
+    Text,
     DateTime,   # DB의 테이블 정의에 사용되는 것
     ForeignKey,
     Time,
@@ -13,6 +14,7 @@ from app.database import Base
 from datetime import datetime   # 날짜 및 시간 데이터의 생성과 계산을 위한 것
 from passlib.context import CryptContext
 import pytz
+from sqlalchemy import LargeBinary
 
 # 비밀번호 해싱을 위한 컨텍스트 설정
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -63,7 +65,7 @@ class MemberProfile(Base):
     profile_id = Column(Integer, primary_key=True)
     user_no = Column(Integer, ForeignKey('member_user.user_no'))
     nickname = Column(String(12))
-    image_url = Column(String(100))
+    image_data = Column(Text, nullable=True)  # base64 문자열로 이미지 저장
     update_date = Column(DateTime)
     create_date = Column(DateTime)
 
