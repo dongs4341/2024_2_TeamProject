@@ -14,7 +14,6 @@ from app.database import Base
 from datetime import datetime   # 날짜 및 시간 데이터의 생성과 계산을 위한 것
 from passlib.context import CryptContext
 import pytz
-from sqlalchemy import LargeBinary
 
 # 비밀번호 해싱을 위한 컨텍스트 설정
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
