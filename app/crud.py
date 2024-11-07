@@ -3,24 +3,28 @@ from app.model import MemberUser as member_user
 from app.model import MemberProfile as member_profile 
 from app.model import Storage_Area as storage_area
 from app.model import Storage_Storage as storage_storage
-from app.model import Detail_Storage as detail_storage
+from app.model import Storage_Room as storage_room
 from app.model import Item as db_item
 from app.schema import (
     UserCreate,
     UserInfo,
     ProfileUpdate,
     ProfileCreate,
+    RoomCreate, 
+    RoomUpdate,
     StorageCreate,
     StorageUpdate,
     Storage,
-    DetailStorageCreate, 
-    DetailStorageUpdate, 
     ItemCreate, 
     ItemUpdate
 )
 from fastapi import HTTPException
 import base64
+import shutil
+import os
 from typing import Optional
+from fastapi import UploadFile
+from datetime import datetime
 
 def get_user_by_no(db: Session, user_no: int):
     return db.query(member_user).filter(member_user.user_no == user_no).first()
@@ -216,12 +220,67 @@ def delete_storage_space(db: Session, user_no: int, area_no: int):
 def get_areas_by_user(db: Session, user_no: int):
     return db.query(storage_area).filter(storage_area.user_no == user_no).all()
 
+# 방 추가
+def create_room(db: Session, area_no: int, room_name: str):
+    new_room = storage_room(
+        area_no=area_no,
+        room_name=room_name
+    )
+    db.add(new_room)
+    db.commit()
+    db.refresh(new_room)
+    return new_room
+
+# 방 조회
+def get_room(db: Session, room_no: int):
+    room = db.query(storage_room).filter(storage_room.room_no == room_no).first()
+    return room
+
+# 특정 공간의 모든 방 조회
+def get_rooms_by_area(db: Session, area_no: int):
+    rooms = db.query(storage_room).filter(storage_room.area_no == area_no).all()
+    return rooms
+
+# 사용자가 소유한 모든 방을 반환하는 함수
+def get_rooms_by_user(db: Session, user_no: int):
+    # 사용자가 소유한 모든 공간에서 방을 조회
+    rooms = (
+        db.query(storage_room)
+        .join(storage_area, storage_room.area_no == storage_area.area_no)
+        .filter(storage_area.user_no == user_no)
+        .all()
+    )
+    return rooms
+
+# 방 수정
+def update_room(db: Session, room_no: int, room_data: RoomUpdate):
+    room = get_room(db, room_no)
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+
+    if room_data.room_name:
+        room.room_name = room_data.room_name
+    
+    db.commit()
+    db.refresh(room)
+    return room
+
+# 방 삭제
+def delete_room(db: Session, room_no: int):
+    room = get_room(db, room_no)
+    if not room:
+        raise HTTPException(status_code=404, detail="Room not found")
+
+    db.delete(room)
+    db.commit()
+    return {"msg": "Room deleted successfully"}
+
+
 # 가구 추가
 def create_storage(db: Session, storage: StorageCreate):
     db_storage = storage_storage(
-        area_no=storage.area_no,
+        room_no=storage.room_no,
         storage_name=storage.storage_name,
-        storage_column=storage.storage_column,
         storage_row=storage.storage_row,
         storage_location=storage.storage_location,
         storage_description=storage.storage_description,
@@ -242,11 +301,11 @@ def get_storage(db: Session, storage_no: int):
     
     return storage
 
-# 특정 공간에 있는 모든 가구 조회
-def get_storages_by_area(db: Session, area_no: int):
-    # 특정 공간에 있는 모든 가구 조회
-    storages = db.query(storage_storage).filter(storage_storage.area_no == area_no).all()
+# 특정 방에 있는 모든 가구 조회
+def get_storages_by_room(db: Session, room_no: int):
+    storages = db.query(storage_storage).filter(storage_storage.room_no == room_no).all()
     return storages
+
 
 
 # 가구 수정
@@ -255,8 +314,10 @@ def update_storage(db: Session, storage_no: int, storage_data: StorageUpdate):
     if not db_storage:
         raise HTTPException(status_code=404, detail="Storage not found")
     
+    # 필드들 중 전달된 값만 업데이트
     for key, value in storage_data.dict(exclude_unset=True).items():
         setattr(db_storage, key, value)
+        
     db.commit()
     db.refresh(db_storage)
     return db_storage
@@ -270,116 +331,3 @@ def delete_storage(db: Session, storage_no: int):
     db.delete(db_storage)
     db.commit()
     return {"msg": "Storage deleted successfully"}
-
-# 상세 저장 위치 추가
-def create_detail_storage(db: Session, storage_no: int, detail_storage_name: str, storage_description: str = None):
-    
-    storage = db.query(storage_storage).filter(storage_storage.storage_no == storage_no).first()
-
-    if not storage:
-        raise HTTPException(status_code=404, detail="Storage not found")
-
-    area_no = storage.area_no
-    
-    # Detail_Storage 객체 생성
-    db_detail_storage = detail_storage(
-        area_no=area_no,
-        storage_no=storage_no,
-        detail_storage_name=detail_storage_name,
-        storage_description=storage_description,
-        storage_created_date=member_user.get_kst_now(),
-    )
-    db.add(db_detail_storage)
-    db.commit()
-    db.refresh(db_detail_storage)
-    return db_detail_storage
-
-# 상세 저장 위치 조회
-def get_detail_storage(db: Session, detail_storage_no: int):
-    db_detail_storage = (
-       db.query(detail_storage).filter(detail_storage.detail_storage_no == detail_storage_no).first()
-    )
-
-    if not db_detail_storage:
-        raise HTTPException(status_code=404, detail="Detail storage not found")
-    
-    return db_detail_storage
-
-# 사용자가 소유한 모든 상세 저장 위치 조회
-def get_all_detail_storages_by_user(db: Session, user_no: int):
-    # 사용자의 모든 공간(area_no)을 가져온 후 그 공간들에 포함된 상세 저장 위치 조회
-    user_areas = db.query(storage_area.area_no).filter(storage_area.user_no == user_no).all()
-    area_nos = [area.area_no for area in user_areas]  # area_no 목록 추출
-    
-    # 해당 사용자가 소유한 모든 상세 저장 위치 반환
-    return db.query(detail_storage).filter(detail_storage.area_no.in_(area_nos)).all()
-
-# 상세 저장 위치 수정
-def update_detail_storage(db: Session, detail_storage_no: int, detail_storage_data: DetailStorageUpdate):
-    db_detail_storage = get_detail_storage(db, detail_storage_no)
-    if not db_detail_storage:
-        raise HTTPException(status_code=404, detail="Detail storage not found")
-    
-    for key, value in detail_storage_data.dict(exclude_unset=True).items():
-        setattr(db_detail_storage, key, value)
-    db.commit()
-    db.refresh(db_detail_storage)
-    return db_detail_storage
-
-# 상세 저장 위치 삭제
-def delete_detail_storage(db: Session, detail_storage_no: int):
-    db_detail_storage = get_detail_storage(db, detail_storage_no)
-    if not db_detail_storage:
-        raise HTTPException(status_code=404, detail="Detail storage not found")
-    
-    db.delete(db_detail_storage)
-    db.commit()
-    return {"msg": "Detail storage deleted successfully"}
-
-# 물건 추가
-def create_item(db: Session, item: ItemCreate):
-    # 먼저 detail_storage_no가 존재하는지 확인
-    detail_storage_instance = db.query(detail_storage).filter(detail_storage.detail_storage_no == item.detail_storage_no).first()
-    if not detail_storage_instance:
-        raise HTTPException(status_code=404, detail="Detail storage not found")
-    
-    # db_item 객체 생성
-    db_item_instance = db_item(
-        detail_storage_no=item.detail_storage_no,
-        item_name=item.item_name,
-        item_type=item.item_type,
-        item_quantity=item.item_quantity,
-    )
-    db.add(db_item_instance)
-    db.commit()
-    db.refresh(db_item_instance)
-    return db_item_instance
-
-# 물건 조회
-def get_item(db: Session, item_id: int):
-    db_item_instance = db.query(db_item).filter(db_item.item_id == item_id).first()
-    if not db_item_instance:
-        raise HTTPException(status_code=404, detail="Item not found")
-    return db_item_instance
-
-# 물건 수정
-def update_item(db: Session, item_id: int, item_data: ItemUpdate):
-    db_item_instance = get_item(db, item_id)
-    if not db_item_instance:
-        raise HTTPException(status_code=404, detail="Item not found")
-    
-    for key, value in item_data.dict(exclude_unset=True).items():
-        setattr(db_item_instance, key, value)
-    db.commit()
-    db.refresh(db_item_instance)
-    return db_item_instance
-
-# 물건 삭제
-def delete_item(db: Session, item_id: int):
-    db_item_instance = get_item(db, item_id)
-    if not db_item_instance:
-        raise HTTPException(status_code=404, detail="Item not found")
-    
-    db.delete(db_item_instance)
-    db.commit()
-    return {"msg": "Item deleted successfully"}
