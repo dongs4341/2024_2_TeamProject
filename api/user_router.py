@@ -9,6 +9,7 @@ from app.config import PROFILE_IMAGE_DIR  # 이미지 경로 설정
 import os, uuid, shutil
 import mimetypes
 import logging
+from fastapi.responses import FileResponse
 
 router = APIRouter()
 
@@ -129,22 +130,15 @@ def profile_read_route(
 def get_profile_image(user_no: int, db: Session = Depends(get_db)):
     profile = crud.get_profile_by_user_no(db, user_no=user_no)
     if not profile or not profile.image_url:
-        raise HTTPException(status_code=404, detail="Image file not found")
+        raise HTTPException(status_code=404, detail="Profile image not found")
 
-    image_path = os.path.join(IMAGE_UPLOAD_DIR, os.path.basename(profile.image_url))
+    image_path = os.path.join(PROFILE_IMAGE_DIR, os.path.basename(profile.image_url))
 
     # 이미지 파일이 실제로 존재하는지 확인
     if not os.path.exists(image_path):
         raise HTTPException(status_code=404, detail="Image file not found")
 
-    with open(image_path, "rb") as image_file:
-        image_data = image_file.read()
-
-    # 파일 확장자에 따라 media_type 설정
-    file_extension = os.path.splitext(image_path)[1].lower()
-    media_type = "image/jpeg" if file_extension == ".jpg" or file_extension == ".jpeg" else "image/png"
-
-    return Response(content=image_data, media_type=media_type)
+    return FileResponse(image_path, media_type="image/jpeg" if image_path.endswith(".jpg") else "image/png")
 
 # 프로필 수정
 @router.put("/profile-update/{user_no}", summary="프로필 수정")
