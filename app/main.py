@@ -44,3 +44,9 @@ app.include_router(storage_router, prefix="/storages", tags=["storages"])
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
+
+# Cloudtype에서 포트를 가져와 실행
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8000))  # 환경변수 PORT가 없으면 기본값 8000 사용
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=port)
