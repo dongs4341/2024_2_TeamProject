@@ -97,7 +97,7 @@ async def profile_create_route(
 
     # 이미지 저장
     unique_filename = f"{uuid.uuid4().hex}_{file.filename}"
-    image_path = os.path.join(IMAGE_UPLOAD_DIR, unique_filename)
+    image_path = os.path.join(PROFILE_IMAGE_DIR, unique_filename)
     
     with open(image_path, "wb") as image_file:
         shutil.copyfileobj(file.file, image_file)
@@ -134,11 +134,25 @@ def get_profile_image(user_no: int, db: Session = Depends(get_db)):
 
     image_path = os.path.join(PROFILE_IMAGE_DIR, os.path.basename(profile.image_url))
 
-    # 이미지 파일이 실제로 존재하는지 확인
     if not os.path.exists(image_path):
         raise HTTPException(status_code=404, detail="Image file not found")
 
-    return FileResponse(image_path, media_type="image/jpeg" if image_path.endswith(".jpg") else "image/png")
+    # 강제로 MIME 타입을 지정해 문제를 방지
+    return FileResponse(image_path, media_type="image/jpeg")
+    
+# @router.get("/profile-image/{user_no}", summary="프로필 이미지 조회")
+# def get_profile_image(user_no: int, db: Session = Depends(get_db)):
+#     profile = crud.get_profile_by_user_no(db, user_no=user_no)
+#     if not profile or not profile.image_url:
+#         raise HTTPException(status_code=404, detail="Profile image not found")
+
+#     image_path = os.path.join(PROFILE_IMAGE_DIR, os.path.basename(profile.image_url))
+
+#     # 이미지 파일이 실제로 존재하는지 확인
+#     if not os.path.exists(image_path):
+#         raise HTTPException(status_code=404, detail="Image file not found")
+
+#     return FileResponse(image_path, media_type="image/jpeg" if image_path.endswith(".jpg") else "image/png")
 
 # 프로필 수정
 @router.put("/profile-update/{user_no}", summary="프로필 수정")
@@ -155,7 +169,7 @@ async def profile_update_route(
     image_url = None
     if file:
         unique_filename = f"{uuid.uuid4().hex}_{file.filename}"
-        image_path = os.path.join(IMAGE_UPLOAD_DIR, unique_filename)
+        image_path = os.path.join(PROFILE_IMAGE_DIR, unique_filename)
 
         with open(image_path, "wb") as image_file:
             shutil.copyfileobj(file.file, image_file)
