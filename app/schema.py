@@ -1,7 +1,7 @@
 # Pydantic을 사용하여 요청과 응답 스키마 정의
 from pydantic import BaseModel, EmailStr, Field, constr, HttpUrl, validator
 from enum import Enum
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime, date, time
 from fastapi import UploadFile
 
@@ -139,7 +139,7 @@ class ItemCreate(BaseModel):
     item_name: str
     item_type: ItemTypeEnum
     item_quantity: int = Field(..., gt=0)  # 1 이상만 허용
-    row_num: Optional[int] = None  # 행 번호
+    row_num: int = Field(..., gt=0)  # 행 번호
     item_imageURL: Optional[str] = None  # 이미지 URL
     item_Expiration_date: Optional[date] = None
 
@@ -159,9 +159,17 @@ class ItemSchema(BaseModel):
     item_name: str
     item_type: str
     item_quantity: int
-    row_num: Optional[int] = None
+    row_num: int
     item_Expiration_date: Optional[date] = None
     item_imageURL: Optional[str] = None
+
+    class Config:
+        from_attributes = True
+
+# 물건 조회 (이름과 번호만 포함)
+class ItemInfoSchema(BaseModel):
+    item_id: int
+    item_name: str
 
     class Config:
         from_attributes = True

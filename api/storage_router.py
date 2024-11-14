@@ -320,7 +320,7 @@ async def create_item_route(
     item_name: str = Form(...),
     item_type: str = Form(...),
     item_quantity: int = Form(...),
-    row_num: Optional[int] = Form(None),
+    row_num: int = Form(...),
     item_Expiration_date: Optional[date] = Form(None),
     file: Optional[UploadFile] = File(None),  # 이미지 파일은 선택 사항
     db: Session = Depends(get_db),
@@ -398,6 +398,44 @@ def get_items_by_storage_route(
     # 특정 가구에 있는 모든 물건 조회
     items = crud.get_items_by_storage(db=db, storage_no=storage_no)
     return items if items else []
+
+@router.get("/{user_no}/spaces/{area_no}/rooms/{room_no}/storages/{storage_no}/row/{row_num}/items", 
+            response_model=List[schema.ItemInfoSchema], 
+            summary="가구의 특정 칸에 있는 모든 물건 조회")
+def get_items_by_storage_row(
+    user_no: int,
+    area_no: int,
+    room_no: int,
+    storage_no: int,
+    row_num: int,
+    db: Session = Depends(get_db),
+    current_user: schema.User = Depends(auth.get_current_user)
+):
+    # 현재 로그인한 사용자만 자신의 데이터에 접근할 수 있도록 제한
+    if user_no != current_user.user_no:
+        raise HTTPException(status_code=403, detail="You do not have permission to access this data.")
+
+    # 사용자가 소유한 공간인지 확인
+    area = crud.get_user_storage_space(db, user_no=user_no, area_no=area_no)
+    if not area:
+        raise HTTPException(status_code=404, detail="Storage area not found.")
+
+    # 해당 공간에 방이 존재하는지 확인
+    room = crud.get_room(db, room_no=room_no)
+    if not room or room.area_no != area_no:
+        raise HTTPException(status_code=404, detail="Room not found in this area.")
+
+    # 해당 방에 가구가 존재하는지 확인
+    storage = crud.get_storage(db, storage_no=storage_no)
+    if not storage or storage.room_no != room_no:
+        raise HTTPException(status_code=404, detail="Storage not found in this room.")
+
+    # 특정 가구의 특정 칸에 있는 모든 물건 조회
+    items = crud.get_items_by_storage_and_row(db, storage_no=storage_no, row_num=row_num)
+    if not items:
+        raise HTTPException(status_code=404, detail="No items found in this storage row.")
+    
+    return items
 
 # 물건 수정
 @router.put("/item/{item_id}", response_model=schema.ItemCreate, summary="물건 수정")
