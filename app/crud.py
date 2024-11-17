@@ -430,3 +430,43 @@ def delete_item(db: Session, item_id: int):
     db.delete(db_item_instance)
     db.commit()
     return {"msg": "Item and its image deleted successfully"}
+
+# 초성 분리 및 검색 관련 정의
+CHO = ["ㄱ", "ㄲ", "ㄴ", "ㄷ", "ㄸ", "ㄹ", "ㅁ", "ㅂ", "ㅃ", "ㅅ", "ㅆ", "ㅇ", "ㅈ", "ㅉ", "ㅊ", "ㅋ", "ㅌ", "ㅍ", "ㅎ"]
+
+# 주어진 문자열의 초성을 추출하여 반환
+def get_initial(item_name: str):
+    initials = ""
+    for char in item_name:
+        if '가' <= char <= '힣':  # 한글인지 확인
+            char_code = ord(char) - ord('가')
+            initial_index = char_code // 588
+            initials += CHO[initial_index]
+        else:
+            initials += char  # 한글이 아니면 그대로 추가
+    return initials
+
+# 초성에 해당하는 모든 한글 문자 범위 생성
+def get_chosung_range(chosung):
+    start_code = ord('가') + CHO.index(chosung) * 588
+    return [chr(start_code + i * 28 + j) for i in range(21) for j in range(28)]  # 21개의 중성과 28개의 종성 조합
+
+# 물건 검색
+def get_item_list(db: Session, item_name: str):
+    # 입력값의 초성을 가져옴
+    item_initial = get_initial(item_name)
+
+    # 한 글자 자음으로 입력된 경우, 초성에 해당하는 모든 한글 음절 범위로 검색
+    if len(item_name) == 1 and item_name in CHO:
+        chosung_range = get_chosung_range(item_name)
+        # chosung_range의 모든 음절을 `OR` 조건으로 추가
+        or_conditions = [db_item.item_name.ilike(f"{syllable}%") for syllable in chosung_range]
+        items = db.query(db_item).filter(or_(*or_conditions)).all()
+    else:
+        # 부분 일치하는 결과 검색
+        items = db.query(db_item).filter(db_item.item_name.ilike(f"%{item_name}%")).all()
+
+    # 초성 필터링을 통해 해당하는 아이템만 가져옴
+    filtered_items = [item for item in items if item_initial in get_initial(item.item_name)]
+    
+    return filtered_items
