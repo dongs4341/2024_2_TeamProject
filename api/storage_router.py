@@ -399,9 +399,10 @@ def get_items_by_storage_route(
     items = crud.get_items_by_storage(db=db, storage_no=storage_no)
     return items if items else []
 
+# 사용자의 특정 공간 → 방 → 가구 → 가구의 해당 칸 → 모든 물건 조회
 @router.get("/{user_no}/spaces/{area_no}/rooms/{room_no}/storages/{storage_no}/row/{row_num}/items", 
             response_model=List[schema.ItemInfoSchema], 
-            summary="가구의 특정 칸에 있는 모든 물건 조회")
+            summary="사용자의 특정 공간 → 방 → 가구 → 가구의 해당 칸 → 모든 물건 조회")
 def get_items_by_storage_row(
     user_no: int,
     area_no: int,

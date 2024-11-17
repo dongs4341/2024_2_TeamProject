@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import or_
 from app.model import MemberUser as member_user
 from app.model import MemberProfile as member_profile 
 from app.model import Storage_Area as storage_area
@@ -192,6 +193,9 @@ def load_user_storage_space(db: Session, user_no: int):
         raise HTTPException(status_code=404, detail="No storage spaces found for this user with the given area_no")
     return spaces
 
+# 공간 조회
+def get_area(db: Session, area_no: int):
+    return db.query(storage_area).filter(storage_area.area_no == area_no).first()
 
 # 특정 공간 조회
 def get_user_storage_space(db: Session, user_no: int, area_no: int):
